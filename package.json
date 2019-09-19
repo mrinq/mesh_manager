@@ -1,0 +1,27 @@
+{
+  "name": "network-manager",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.19.0",
+    "express": "^4.17.1",
+    "pg": "^7.12.1",
+    "pg-hstore": "^2.3.3",
+    "sequelize": "^5.16.0",
+    "dotenv": "^8.0.0",
+    "randomstring": "^1.1.5",
+    "bignumber.js": "^9.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.19.1",
+    "sequelize-cli": "^5.5.0"
+  }
+}
