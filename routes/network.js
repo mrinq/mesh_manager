@@ -4,7 +4,9 @@ const Network = require('../models').network
 const NetworkKey = require('../models').network_key
 const ApplicationKey = require('../models').application_key
 const nodes = require('./node')
+const application_keys = require('./application_key')
 const provisioners = require('./provisioner')
+const groups = require('./group')
 const Sequelize = require('sequelize')
 const Op = Sequelize.Op;
 
@@ -16,22 +18,23 @@ networks.post('/', async (req, res) => {
         
         let result = await Network.create({
             name: network.name,
-            network_type: network.network_type
+            network_type: network.network_type,
+            application_type: network.application_type
         });
 
         var network_key = await result.getNetwork_keys({attributes: ['key']});
         var application_key = await result.getApplication_keys({attributes: ['key']});
 
+
         res.status(201).send({type: "success",message: {
             meshUUID: result.mesh_uuid,
             name: result.name,
             network_type: result.network_type,
-            application_key: application_key,
-            network_key: network_key
+            application_key: application_key.map(a => a.dataValues.key)[0],
+            network_key: network_key.map(a => a.dataValues.key)[0]
         }})
 
     } catch (e) {
-        console.log(e)
         res.status(400).send(e)
     }
 })
@@ -50,7 +53,33 @@ networks.patch('/:meshUUID', async (req, res) => {
         res.status(201).send({type: "success", message: ""})
 
     } catch (e) {
-        console.log(e)
+        res.status(400).send(e)
+    }
+})
+
+
+networks.get('/:meshUUID', async (req, res) => {
+    try {
+        
+        let network = req.body;
+
+        
+        let result = await Network.findOne(
+            { where: { mesh_uuid: req.params.meshUUID  },
+        })
+
+        var network_key = await result.getNetwork_keys({attributes: ['key']});
+        var application_key = await result.getApplication_keys({attributes: ['key']});
+
+        res.status(201).send({type: "success", message: {
+            meshUUID: result.mesh_uuid,
+            name: result.name,
+            network_type: result.network_type,
+            application_key: application_key.map(a => a.dataValues.key),
+            network_key: network_key.map(a => a.dataValues.key)
+        }})
+
+    } catch (e) {
         res.status(400).send(e)
     }
 })
@@ -64,6 +93,18 @@ networks.use('/:meshUUID/provisioners', function(req, res, next) {
     req.meshUUID = req.params.meshUUID;
     next()
 }, provisioners);
+
+
+networks.use('/:meshUUID/groups', function(req, res, next) {
+    req.meshUUID = req.params.meshUUID;
+    next()
+}, groups);
+
+
+networks.use('/:meshUUID/application_keys', function(req, res, next) {
+    req.meshUUID = req.params.meshUUID;
+    next()
+}, application_keys);
 
 networks.get('/', async (req, res) => {
     try {
@@ -88,7 +129,6 @@ networks.get('/', async (req, res) => {
 
         res.status(201).send(_networksSerializer(result))
     } catch (e) {
-        console.log(e)
         res.status(400).send(e)
     }
 })
@@ -99,6 +139,7 @@ function _networksSerializer(networks) {
 
     
     for (let i = 0; i < networks.length; i++) {
+
         let network = networks[i]
             toReturn.push({
             meshUUID: network.mesh_uuid,

@@ -11,7 +11,10 @@ module.exports = (sequelize, DataTypes) => {
     provisioner_uuid: DataTypes.STRING,
     address: DataTypes.STRING,
     allocated_unicast_range: DataTypes.JSON,
+    allocated_group_range: DataTypes.JSON,
+    allocated_scene_range: DataTypes.JSON,
     range_sort_value: DataTypes.JSON,
+    sort_value: DataTypes.JSON,
 
   }, {
     hooks: {
@@ -32,9 +35,14 @@ module.exports = (sequelize, DataTypes) => {
           [Op.not]: null
         }
       },
-      order: [ [ 'range_sort_value', 'DESC' ]]
+      // order: [ [ 'range_sort_value', 'DESC' ]]
+      // order: [sequelize.literal("sort_value.unicast"), 'DESC']
+      order: [
+        [sequelize.json("sort_value.unicast"), "DESC"],
+      ]
     });
 
+    
     if(existingUserNetwork){
       var a = existingUserNetwork.allocated_unicast_range //14 is decimal in 20
       var proxy = new BigNumber(a.highAddress, 16)
@@ -42,23 +50,100 @@ module.exports = (sequelize, DataTypes) => {
       
       var new_to = new_from.plus(new BigNumber(13, 16)) //13 is decimal in 19
       
-      var sortValue = new_to.toString(10) //13 is decimal in 19
+      this.sort_value.unicast = existingUserNetwork.sort_value.unicast + 1;
+      this.sort_value = this.sort_value
 
-      this.range_sort_value = existingUserNetwork.range_sort_value + 1;
-      
       this.allocated_unicast_range = {lowAddress: new_from.toString(16), highAddress: new_to.toString(16)}
+      await this.save()
+      return {lowAddress: new_from.toString(16), highAddress: new_to.toString(16)}
+      
+    }else{
+      this.allocated_unicast_range = {lowAddress: "1", highAddress: "14"}
+      this.sort_value.unicast = 0
+      this.sort_value = this.sort_value
+      await this.save()
+      return {lowAddress: "1", highAddress: "14"} //14 is 20 in decimal
+    }
+  },
+
+
+  provisioner.prototype.FetchNewGroupRange = async function () {
+    let existingUserNetwork = await provisioner.findOne({
+      where: {
+        mesh_uuid: this.mesh_uuid,
+        allocated_group_range:{
+          [Op.not]: null
+        }
+      },
+      order: [
+        [sequelize.json("sort_value.group"), "DESC"],
+      ]
+    });
+
+    if(existingUserNetwork){
+      var a = existingUserNetwork.allocated_group_range //14 is decimal in 20
+      var proxy = new BigNumber(a.highAddress, 16)
+      var new_from = proxy.plus(new BigNumber(1, 16))
+      
+      var new_to = new_from.plus(new BigNumber(13, 16)) //13 is decimal in 19
+      
+      this.sort_value.group = existingUserNetwork.sort_value.group + 1;
+      this.sort_value = this.sort_value
+
+      
+      this.allocated_group_range = {lowAddress: new_from.toString(16), highAddress: new_to.toString(16)}
       await this.save()
 
       return {lowAddress: new_from.toString(16), highAddress: new_to.toString(16)}
       
     }else{
-      this.allocated_unicast_range = {lowAddress: "1", highAddress: "14"}
-      this.range_sort_value = 0
+      this.allocated_group_range = {lowAddress: "C000", highAddress: "C014"}
+      this.sort_value.group = 0
+      this.sort_value = this.sort_value
+      await this.save()
+      return {lowAddress: "C000", highAddress: "C014"} //14 is 20 in decimal
+    }
+  },
+
+  provisioner.prototype.FetchNewSceneRange = async function () {
+    let existingUserNetwork = await provisioner.findOne({
+      where: {
+        mesh_uuid: this.mesh_uuid,
+        allocated_scene_range:{
+          [Op.not]: null
+        }
+      },
+      order: [
+        [sequelize.json("sort_value.scene"), "DESC"],
+      ]
+    });
+
+    if(existingUserNetwork){
+      var a = existingUserNetwork.allocated_scene_range //14 is decimal in 20
+      var proxy = new BigNumber(a.highAddress, 16)
+      var new_from = proxy.plus(new BigNumber(1, 16))
+      
+      var new_to = new_from.plus(new BigNumber(13, 16)) //13 is decimal in 19
+      
+      this.sort_value.scene = existingUserNetwork.sort_value.group + 1;
+      this.sort_value = this.sort_value
+
+      
+      this.allocated_scene_range = {lowAddress: new_from.toString(16), highAddress: new_to.toString(16)}
+      await this.save()
+
+      return {lowAddress: new_from.toString(16), highAddress: new_to.toString(16)}
+      
+    }else{
+      this.allocated_scene_range = {lowAddress: "1", highAddress: "14"}
+      this.sort_value.scene = 0
+      this.sort_value = this.sort_value
       await this.save()
       return {lowAddress: "1", highAddress: "14"} //14 is 20 in decimal
     }
-
   },
+
+
   provisioner.associate = function(models) {
     provisioner.belongsTo(models.network, {
       foreignKey: "mesh_uuid",

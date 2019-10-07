@@ -1,0 +1,20 @@
+{
+  "apps" : [{
+     "name" : "Network Manager",
+     "script" : "src/app.js",
+     "env_production": {
+       "PORT": 3000,
+       "NODE_ENV": "production"
+   }
+  }],
+  "deploy" : {
+    "production" : {
+      "user" : "deploy",
+      "host" : ["ec2-35-154-41-118.ap-south-1.compute.amazonaws.com"],
+      "ref"  : "origin/master",
+      "repo" : "git@github.com:mrinq/mesh_manager.git",
+      "path" : "/home/deploy/network_manager",
+      "post-deploy" : "npm install && node_modules/.bin/sequelize db:migrate --env production"
+     }
+  }
+}

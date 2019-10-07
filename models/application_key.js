@@ -10,6 +10,11 @@ module.exports = (sequelize, DataTypes) => {
     key: DataTypes.STRING,
     oldKey: DataTypes.STRING,
     minSecurity: DataTypes.STRING,
+    application_type: {
+      type: DataTypes.ENUM,
+      values: ["home_automation", "access_control"],
+      allowNull: false
+    }
   }, {
     hooks: {
       beforeCreate: function(application_key, options, fn) {

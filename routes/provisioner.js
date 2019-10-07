@@ -10,22 +10,25 @@ networks.post('/', async (req, res) => {
     try {
         
         let network = req.body;
-        
+
         let  result = await Provisioner.create({
             mesh_uuid: req.meshUUID,
         });
 
         await result.FetchNewAvailableRange()
+        await result.FetchNewGroupRange()
+        await result.FetchNewSceneRange()
 
-        res.status(201).send({type: "success", message: result})
+        console.log(result)
+
+        res.status(201).send({type: "success", message: {mesh_uuid: result.mesh_uuid, provisioner_uuid: result.provisioner_uuid, alllocated_unicast_range: result.allocated_unicast_range, allocated_group_range: result.allocated_group_range, allocated_scene_range: result.allocated_scene_range}})
 
     } catch (e) {
-        console.log(e)
         res.status(400).send(e)
     }
 })
 
-networks.get('/:provisionerUUID/unicast_range', async (req, res) => {
+networks.get('/:provisionerUUID/allocated_unicast_range', async (req, res) => {
 
     try {
         
@@ -35,14 +38,54 @@ networks.get('/:provisionerUUID/unicast_range', async (req, res) => {
             }
         });
 
-        provisioner.available_range = await provisioner.FetchNewAvailableRange()
+        var available_unicast_range = await provisioner.FetchNewAvailableRange()
 
 
-        res.status(200).send({type: "success", message: {available_range: provisioner.available_range}})
+        res.status(200).send({type: "success", message: {allocated_unicast_range: available_unicast_range}})
     } catch (e) {
         res.status(500).send()
     }
 })
+
+networks.get('/:provisionerUUID/allocated_group_range', async (req, res) => {
+
+    try {
+        
+        let provisioner = await Provisioner.findOne({
+            where: {
+                provisioner_uuid: req.params.provisionerUUID,
+            }
+        });
+
+        var available_group_range = await provisioner.FetchNewGroupRange()
+
+
+        res.status(200).send({type: "success", message: {allocated_group_range: available_group_range}})
+    } catch (e) {
+        res.status(500).send()
+    }
+})
+
+
+networks.get('/:provisionerUUID/allocated_scene_range', async (req, res) => {
+
+    try {
+        
+        let provisioner = await Provisioner.findOne({
+            where: {
+                provisioner_uuid: req.params.provisionerUUID,
+            }
+        });
+
+        var available_scene_range = await provisioner.FetchNewSceneRange()
+
+
+        res.status(200).send({type: "success", message: {allocated_scene_range: available_scene_range}})
+    } catch (e) {
+        res.status(500).send()
+    }
+})
+
 
 
 networks.get('/', async (req, res) => {
@@ -67,7 +110,6 @@ networks.get('/', async (req, res) => {
 
         res.status(201).send(_networksSerializer(result))
     } catch (e) {
-        console.log(e)
         res.status(400).send(e)
     }
 })

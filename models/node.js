@@ -17,7 +17,7 @@ module.exports = (sequelize, DataTypes) => {
     crpl: DataTypes.STRING,
     features: DataTypes.JSON,
     appKeys: DataTypes.JSON,
-    netKeys: DataTypes.JSON,
+    netKeys: DataTypes.JSON,  
     elements: DataTypes.JSON,
     secureNetworkBeacon:DataTypes.STRING,
     defaultTTL:DataTypes.STRING,
@@ -26,14 +26,10 @@ module.exports = (sequelize, DataTypes) => {
     blacklisted: DataTypes.STRING,
   }, {
     hooks: {
-      beforeCreate: function(network, options, fn) {
+      // beforeCreate: function(network, options, fn) {
         
-        network.node_uuid = randomstring.generate({
-          charset: 'abc12345',
-          length: 32
-        });
       
-      }
+      // }
     },
   });
   node.associate = function(models) {
@@ -41,6 +37,19 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: "mesh_uuid",
       targetKey: 'mesh_uuid',
       as: "node"
+    });
+    node.belongsToMany(models.group, {
+      through: models.group_node,
+      as: 'groups',
+      foreignKey: 'node_uuid',
+      otherKey: 'group_id',
+      sourceKey: 'node_uuid'
+      
+    });
+    node.hasMany(models.group_node, {
+      as: "group_nodes",
+      foreignKey: "node_uuid",
+      sourceKey: 'node_uuid'
     });
   };
   return node;

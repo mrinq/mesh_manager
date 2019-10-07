@@ -1,6 +1,9 @@
 const express = require('express')
 const networks = new express.Router()
 const Node = require('../models').node
+const Network = require('../models').network
+const GroupNode = require('../models').group_node
+const Group = require('../models').group
 const Sequelize = require('sequelize')
 const Op = Sequelize.Op;
 
@@ -12,6 +15,7 @@ networks.post('/', async (req, res) => {
         
         let result = await Node.create({
             mesh_uuid: req.meshUUID,
+            node_uuid: node.node_uuid,
             name: node.name,
             unicast_address: node.unicast_address,
             device_key: node.device_key,
@@ -34,10 +38,16 @@ networks.post('/', async (req, res) => {
 
         });
 
+        if(node.group_id){
+            await GroupNode.create({
+                node_uuid: result.node_uuid,
+                group_id: node.group_id
+            });
+        }
+
         res.status(201).send({type: "success", message: result})
 
     } catch (e) {
-        console.log(e)
         res.status(400).send(e)
     }
 })
@@ -45,29 +55,116 @@ networks.post('/', async (req, res) => {
 networks.get('/', async (req, res) => {
 
     try {
-        var result = await Node.findAll({
-            where: {mesh_uuid: "22ab54523c525333b4ac512aa44b222b"}
-        });
+        let network = await Network.findOne(
+            {
+                where: {
+                    mesh_uuid: req.meshUUID
+                    },
+                    include: [
+                        {
+                            model: Node,
+                            as: "nodes",
+                            include:[
+                                {
+                                    model: Group,
+                                    as: "groups",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            );
 
-        res.status(200).send({type: "success", message: result})
+        res.send(_nodesSerializer(network.nodes))
     } catch (e) {
-        console.log(e)
         res.status(400).send(e)
     }
 })
 
-function _networksSerializer(networks) {
+
+networks.delete('/:uuid', async (req, res) => {
+    try {
+
+        let node = await Node.findOne({
+            where: {
+                node_uuid: req.params.uuid,
+            }})   
+
+        await node.destroy();
+
+        res.status(200).send({type: "success",message: {}})
+    } catch (e) {
+        res.status(500).send()
+    }
+})
+
+
+networks.patch('/:uuid', async (req, res) => {
+    try {
+
+        await Node.update(
+            {
+                mesh_uuid: req.meshUUID,
+                name: node.name,
+                unicast_address: node.unicast_address,
+                device_key: node.device_key,
+                security: node.security,
+                configComplete: node.configComplete,
+                name: node.node,
+                cid: node.cid,
+                pid: node.pid,
+                vid: node.vid,
+                crpl: node.crpl,
+                features: node.features,
+                appKeys:  node.appKeys,
+                netKeys: node.netKeys,
+                elements: node.elements,
+                secureNetworkBeacon: node.secureNetworkBeacon,
+                defaultTTL: node.defaultTTL,
+                networkTransmit: node.networkTransmit,
+                relayRetransmit: node.relayRetransmit,
+                blacklisted: node.blacklisted,
+            },
+            { where: { node_uuid: req.params.uuid } }
+            )
+
+        res.status(200).send({type: "success",message: {}})
+    } catch (e) {
+        res.status(500).send()
+    }
+})
+
+function roomData(item) {
+    return {id: item.id};
+  }
+
+function _nodesSerializer(nodes) {
     let toReturn = [];
 
-    
-    for (let i = 0; i < networks.length; i++) {
-        let network = networks[i]
-            toReturn.push({
-            meshUUID: network.mesh_uuid,
-            name: network.name,
-            network_type: network.network_type,
-            application_key: network.application_keys[0].key,
-            network_key: network.network_keys[0].key
+    for (let i = 0; i < nodes.length; i++) {
+        let node = nodes[i]
+        toReturn.push({
+            mesh_uuid: node.meshUUID,
+            name: node.name,
+            unicast_address: node.unicast_address,
+            device_key: node.device_key,
+            security: node.security,
+            configComplete: node.configComplete,
+            name: node.node,
+            cid: node.cid,
+            pid: node.pid,
+            vid: node.vid,
+            crpl: node.crpl,
+            features: node.features,
+            appKeys:  node.appKeys,
+            netKeys: node.netKeys,
+            elements: node.elements,
+            secureNetworkBeacon: node.secureNetworkBeacon,
+            defaultTTL: node.defaultTTL,
+            networkTransmit: node.networkTransmit,
+            relayRetransmit: node.relayRetransmit,
+            blacklisted: node.blacklisted,
+            groups: node.groups.map(a => a.id),
         })
     }
 

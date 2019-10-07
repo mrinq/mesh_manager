@@ -9,6 +9,5 @@ const app = express()
 app.use(express.json())
 app.use('/networks', networkRouter)
 app.use('/provisioners', provisionerRouter)
-// app.use('/nodes', nodeRouter)
 
 module.exports = app

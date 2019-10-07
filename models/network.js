@@ -5,7 +5,8 @@ module.exports = (sequelize, DataTypes) => {
   const network = sequelize.define('network', {
     mesh_uuid: DataTypes.STRING,
     name: DataTypes.STRING,
-    network_type: DataTypes.STRING
+    network_type: DataTypes.STRING,
+    application_type: DataTypes.VIRTUAL,
   }, {
     hooks: {
       beforeCreate: function(network, options, fn) {
@@ -18,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       afterCreate: async function(network, options, fn) {
         await network.createNetwork_key({ mesh_uuid: network.mesh_uuid})
-        await network.createApplication_key({ mesh_uuid: network.mesh_uuid})
+        await network.createApplication_key({ mesh_uuid: network.mesh_uuid, application_type: network.application_type})
       }
     },
   });
@@ -41,6 +42,13 @@ module.exports = (sequelize, DataTypes) => {
       as: "nodes",
       sourceKey: 'mesh_uuid'
     });
+
+    network.hasMany(models.group, {
+      as: "groups",
+      foreignKey: "mesh_uuid",
+      sourceKey: 'mesh_uuid'
+    });
+
   };
   return network;
 };
