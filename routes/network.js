@@ -19,20 +19,13 @@ networks.post('/', async (req, res) => {
         let result = await Network.create({
             name: network.name,
             network_type: network.network_type,
-            application_type: network.application_type
+            application_type: "home_automation"
         });
 
-        var network_key = await result.getNetwork_keys({attributes: ['key']});
-        var application_key = await result.getApplication_keys({attributes: ['key']});
 
+        res.status(201).send(await _networksSerializer(result))
 
-        res.status(201).send({type: "success",message: {
-            meshUUID: result.mesh_uuid,
-            name: result.name,
-            network_type: result.network_type,
-            application_key: application_key.map(a => a.dataValues.key)[0],
-            network_key: network_key.map(a => a.dataValues.key)[0]
-        }})
+       
 
     } catch (e) {
         res.status(400).send(e)
@@ -68,16 +61,8 @@ networks.get('/:meshUUID', async (req, res) => {
             { where: { mesh_uuid: req.params.meshUUID  },
         })
 
-        var network_key = await result.getNetwork_keys({attributes: ['key']});
-        var application_key = await result.getApplication_keys({attributes: ['key']});
-
-        res.status(201).send({type: "success", message: {
-            meshUUID: result.mesh_uuid,
-            name: result.name,
-            network_type: result.network_type,
-            application_key: application_key.map(a => a.dataValues.key),
-            network_key: network_key.map(a => a.dataValues.key)
-        }})
+        res.status(201).send(await _networksSerializer(result, req.query.provisioner_uuid))
+        
 
     } catch (e) {
         res.status(400).send(e)
@@ -134,21 +119,26 @@ networks.get('/', async (req, res) => {
 })
 
 
-function _networksSerializer(networks) {
-    let toReturn = [];
+async function _networksSerializer(network, provisioner_uuid=null) {
 
-    
-    for (let i = 0; i < networks.length; i++) {
-
-        let network = networks[i]
-            toReturn.push({
-            meshUUID: network.mesh_uuid,
-            name: network.name,
-            network_type: network.network_type,
-            application_key: network.application_keys[0].key,
-            network_key: network.network_keys[0].key
-        })
+    var provisioner;
+    if(provisioner_uuid == null){
+        provisioner = await network.getProvisioners({attributes: ['provisioner_uuid','allocated_unicast_range','allocated_group_range','allocated_scene_range'],raw:true})
+    }else{
+        provisioner = await network.getProvisioners({where: {provisioner_uuid: provisioner_uuid}, attributes: ['provisioner_uuid','allocated_unicast_range','allocated_group_range','allocated_scene_range'],raw:true})
     }
+    
+
+    var toReturn = {
+        "meshUUID": network.mesh_uuid,
+        "netKeys": await network.getNetwork_keys({attributes: ['index','key','phase','minSecurity'], raw:true}),
+        "appKeys": await network.getApplication_keys({attributes: ['index','boundNetKey','key'], raw:true}),
+        "provisioners": provisioner,
+        "nodes": await network.getNodes({attributes: ['name', 'node_uuid', 'unicast_address','device_key','security','configComplete','name','cid','pid','vid','crpl','features','elements','secureNetworkBeacon','defaultTTL','networkTransmit','relayRetransmit','blacklisted'], raw:true}),
+        "groups": await network.getGroups({attributes: ['address','parentAddress'], raw:true})
+    }
+
+    console.log(toReturn)
 
     return {type: "success", message: toReturn}
 }

@@ -23,10 +23,27 @@ module.exports = (sequelize, DataTypes) => {
           charset: 'abc12345',
           length: 32
         });
-        // await provisioner.FetchNewAvailableRange()
+      },
+      afterCreate: async function(provisioner, options, fn) {
+        var range = await provisioner.FetchNewAvailableRange()
+        await provisioner.FetchNewGroupRange()
+        await provisioner.FetchNewSceneRange()
+        await sequelize.models.node.create({
+          mesh_uuid: provisioner.mesh_uuid,
+          node_uuid: provisioner.provisioner_uuid,
+          unicast_address: range.lowAddress
+        })
+        await provisioner.AssignProvisionerNewUicastAddress(range)
       }
     }
   });
+
+  provisioner.prototype.AssignProvisionerNewUicastAddress = async function (range) {
+    var lowAddress = new BigNumber(range.lowAddress, 16)
+    this.allocated_unicast_range = {lowAddress: (lowAddress.plus(new BigNumber(1, 16))).toString(16), highAddress: range.highAddress}
+    await this.save()
+  }
+
   provisioner.prototype.FetchNewAvailableRange = async function () {
     let existingUserNetwork = await provisioner.findOne({
       where: {
@@ -35,8 +52,6 @@ module.exports = (sequelize, DataTypes) => {
           [Op.not]: null
         }
       },
-      // order: [ [ 'range_sort_value', 'DESC' ]]
-      // order: [sequelize.literal("sort_value.unicast"), 'DESC']
       order: [
         [sequelize.json("sort_value.unicast"), "DESC"],
       ]

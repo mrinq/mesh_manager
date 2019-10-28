@@ -8,19 +8,13 @@ const Op = Sequelize.Op;
 //Creates a new network
 networks.post('/', async (req, res) => {
     try {
-        
         let network = req.body;
+
+        console.log(network)
 
         let  result = await Provisioner.create({
             mesh_uuid: req.meshUUID,
         });
-
-        await result.FetchNewAvailableRange()
-        await result.FetchNewGroupRange()
-        await result.FetchNewSceneRange()
-
-        console.log(result)
-
         res.status(201).send({type: "success", message: {mesh_uuid: result.mesh_uuid, provisioner_uuid: result.provisioner_uuid, alllocated_unicast_range: result.allocated_unicast_range, allocated_group_range: result.allocated_group_range, allocated_scene_range: result.allocated_scene_range}})
 
     } catch (e) {
@@ -31,7 +25,7 @@ networks.post('/', async (req, res) => {
 networks.get('/:provisionerUUID/allocated_unicast_range', async (req, res) => {
 
     try {
-        
+
         let provisioner = await Provisioner.findOne({
             where: {
                 provisioner_uuid: req.params.provisionerUUID,

@@ -20,6 +20,10 @@ module.exports = (sequelize, DataTypes) => {
       afterCreate: async function(network, options, fn) {
         await network.createNetwork_key({ mesh_uuid: network.mesh_uuid})
         await network.createApplication_key({ mesh_uuid: network.mesh_uuid, application_type: network.application_type})
+        await network.createProvisioner({ mesh_uuid: network.mesh_uuid})
+        await network.createGroup({address: 'C000', parentAddress: 'C000'})
+        await network.createGroup({address: 'C001', parentAddress: 'C001'})
+        await network.createGroup({address: 'C002', parentAddress: 'C002'})
       }
     },
   });
@@ -34,6 +38,12 @@ module.exports = (sequelize, DataTypes) => {
     network.hasMany(models.application_key, {
       foreignKey: "mesh_uuid",
       as: "application_keys",
+      sourceKey: 'mesh_uuid'
+    });
+
+    network.hasMany(models.provisioner, {
+      foreignKey: "mesh_uuid",
+      as: "provisioners",
       sourceKey: 'mesh_uuid'
     });
 
