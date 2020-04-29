@@ -19,7 +19,7 @@ networks.post('/', async (req, res) => {
         let result = await Network.create({
             name: network.name,
             network_type: network.network_type,
-            application_type: "home_automation"
+            application_type: "access_control"
         });
 
 
