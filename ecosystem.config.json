@@ -10,10 +10,10 @@
     "production" : {
       "user" : "deploy",
       "host" : ["ec2-35-154-41-118.ap-south-1.compute.amazonaws.com"],
-      "ref"  : "origin/master",
+      "ref"  : "origin/develop",
       "repo" : "git@github.com:mrinq/mesh_manager.git",
-      "path" : "/home/deploy/network_manager",
-      "post-deploy" : "npm install && node_modules/.bin/sequelize db:migrate --env production"
+      "path" : "/home/deploy/network_manager_production/mesh_manager",
+      "post-deploy" : "npm install && node_modules/.bin/sequelize db:migrate --env development"
      }
   }
 }
