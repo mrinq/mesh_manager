@@ -1,6 +1,6 @@
 {
   "apps" : [{
-     "name" : "Network Manager Production",
+     "name" : "Network Manager Testing",
      "script" : "server.js",
      "env": {
        "NODE_ENV": "development"
