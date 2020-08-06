@@ -25,12 +25,6 @@ module.exports = (sequelize, DataTypes) => {
     relayRetransmit:DataTypes.STRING,
     blacklisted: DataTypes.STRING,
   }, {
-    hooks: {
-      // beforeCreate: function(network, options, fn) {
-        
-      
-      // }
-    },
   });
   node.associate = function(models) {
     node.belongsTo(models.network, {

@@ -6,6 +6,7 @@ const GroupNode = require('../models').group_node
 const Group = require('../models').group
 const Sequelize = require('sequelize')
 const Op = Sequelize.Op;
+const randomstring = require("randomstring");
 
 //Creates a new network
 networks.post('/', async (req, res) => {
@@ -15,7 +16,7 @@ networks.post('/', async (req, res) => {
         
         let result = await Node.create({
             mesh_uuid: req.meshUUID,
-            node_uuid: node.node_uuid,
+            node_uuid: genenrate_node_uuid(),
             name: node.name,
             unicast_address: node.unicast_address,
             device_key: node.device_key,
@@ -45,7 +46,7 @@ networks.post('/', async (req, res) => {
             });
         }
 
-        res.status(201).send({type: "success", message: result})
+        res.send(_nodeSerializer(result))
 
     } catch (e) {
         res.status(400).send(e)
@@ -134,9 +135,27 @@ networks.patch('/:uuid', async (req, res) => {
     }
 })
 
-function roomData(item) {
-    return {id: item.id};
+function genenrate_node_uuid() {
+    var node_uuid = randomstring.generate({
+        charset: 'abc12345',
+        length: 32
+      });
+
+      console.log(node_uuid)
+
+      return node_uuid
   }
+
+  function _nodeSerializer(node) {
+
+      var returnValue = {
+        node_uuid: node.node_uuid,
+        unicast_address: node.unicast_address
+      }
+
+      return {type: "success", message: returnValue}
+  }
+
 
 function _nodesSerializer(nodes) {
     let toReturn = [];
